@@ -58,4 +58,5 @@ PostgreSQL · RabbitMQ · AWS
 
 ## 📫 Connect
 
-[LinkedIn](https://linkedin.com/in/your-linkedin-handle)
+[LinkedIn](https://www.linkedin.com/in/petru-acsinte)
+
