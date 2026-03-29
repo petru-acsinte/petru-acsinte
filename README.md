@@ -1,12 +1,8 @@
 # Hi, I'm Petru 👋
 
-Senior Java backend developer with 20+ years of enterprise experience, 
-specializing in REST API design, performance optimization, and large-scale 
-distributed systems.
+Senior Java backend developer with 20+ years of experience building and optimizing enterprise systems, specializing in REST APIs, performance tuning, and large-scale data processing — including improvements that reduced API response times by up to 70%.
 
-My GitHub projects focus on modernizing that foundation — practicing and learning 
-the cloud-native technologies I want to add to my toolkit: microservices, 
-containerization, CI/CD pipelines, and cloud deployment.
+My GitHub projects focus on modernizing that foundation through a hands-on system design project exploring cloud-native architecture: microservices, containerization, CI/CD, and cloud deployment.
 
 ---
 
@@ -14,7 +10,9 @@ containerization, CI/CD pipelines, and cloud deployment.
 
 ### [Order Processing — Portfolio Project](https://github.com/petru-acsinte-dev)
 
-A learning project that deliberately follows the evolution of a real-world backend system:
+A hands-on modernization project that deliberately follows the evolution of a real-world backend system.
+
+The system simulates a distributed order processing platform with authentication, order management, and fulfillment services — with external REST APIs and internal asynchronous messaging via RabbitMQ.
 
 | Phase | Repo | Description |
 |---|---|---|
@@ -22,15 +20,63 @@ A learning project that deliberately follows the evolution of a real-world backe
 | Phase 2 | [order-processing-users](https://github.com/petru-acsinte-dev/order-processing-users) | Users & authentication microservice |
 | Phase 2 | [order-processing-orders](https://github.com/petru-acsinte-dev/order-processing-orders) | Products & orders microservice |
 | Phase 2 | [order-processing-shipments](https://github.com/petru-acsinte-dev/order-processing-shipments) | Fulfillment & shipment microservice |
+| Phase 3 | AWS deployment | ECS Fargate, RDS, Amazon MQ, CloudWatch — in progress |
 | Shared | [order-processing-common](https://github.com/petru-acsinte-dev/order-processing-common) | Shared library published to GitHub Packages |
 
-**What this project covers:**
+---
+
+## 🏗️ Architecture
+
+```
+                        ┌─────────────────────────────────────────────────────┐
+                        │                   External Clients                  │
+                        └─────────────────────┬───────────────────────────────┘
+                                              │ REST (JWT)
+                        ┌─────────────────────▼───────────────────────────────┐
+                        │              API Gateway / ALB (AWS)                │
+                        └──────┬──────────────┬──────────────────┬────────────┘
+                               │              │                  │
+               ┌───────────────▼──┐  ┌────────▼───────┐  ┌──────▼──────────┐
+               │   Users Service  │  │ Orders Service │  │     Shipments   │
+               │   (port 8080)    │  │  (port 8081)   │  │     Service     │
+               │                  │  │                │  │   (port 8082)   │
+               │  - JWT issuance  │  │ - Products     │  │ - Fulfillments  │
+               │  - Auth          │  │ - Orders       │  │ - Shipments     │
+               └───────┬──────────┘  └───────┬────────┘  └──────┬──────────┘
+                       │                     │                   │
+               ┌───────▼──────┐              │                   │
+               │   users_db   │      ┌───────▼──────┐   ┌───────▼──────┐
+               │  (Postgres)  │      │   orders_db  │   │ shipments_db │
+               └──────────────┘      │  (Postgres)  │   │  (Postgres)  │
+                                     └──────────────┘   └──────────────┘
+                                              │                   │
+                                     ┌────────▼───────────────────▼────────┐
+                                     │         RabbitMQ / Amazon MQ        │
+                                     │                                      │
+                                     │  Exchange: order.events (topic)      │
+                                     │                                      │
+                                     │  order.confirmed ──► shipment queue  │
+                                     │  order.shipped   ──► orders queue    │
+                                     │                                      │
+                                     │  Dead-letter queues per queue        │
+                                     └──────────────────────────────────────┘
+```
+
+**Flow:** Client authenticates via Users → receives JWT → calls Orders with JWT → order confirmed → `OrderConfirmedEvent` published to RabbitMQ → Shipments consumes → creates fulfillment and shipment → `OrderShippedEvent` published → Orders consumes → marks order as shipped.
+
+---
+
+**Key capabilities demonstrated:**
+
 - Monolith → microservices decomposition
-- JWT authentication with cross-service token validation
+- JWT authentication with cross-service token validation (roles + externalId embedded in token — no inter-service user lookups)
 - Independent CI/CD pipelines per service (GitHub Actions)
 - Containerization with Docker, images published to GHCR
-- Structured logging with correlation ID propagation across services
-- Inter-service communication via OpenFeign (RabbitMQ saga pattern coming next)
+- Structured JSON logging with correlation ID (`X-Request-ID`) propagated across services and through message events
+- Asynchronous messaging via RabbitMQ (topic exchange, DLQs, Saga pattern foundation)
+- Database-per-service pattern (Postgres with schema isolation)
+- Shared library pattern for cross-cutting concerns (security filters, exception handling, events, messaging config)
+- Self-contained integration tests via Testcontainers (Postgres + RabbitMQ — no external dependencies)
 - AWS deployment (in progress)
 
 ---
@@ -39,15 +85,16 @@ A learning project that deliberately follows the evolution of a real-world backe
 
 **Experienced with:** Java · SQL · REST APIs · DB2 · Oracle · SQL Server · Eclipse · Maven
 
-**Actively learning through this project:** Spring Boot · Spring Security · JWT ·
+**Currently applying and expanding skills in:** Spring Boot · Spring Security · JWT ·
 Microservices · Docker · GitHub Actions · Testcontainers · JaCoCo ·
-PostgreSQL · RabbitMQ · AWS
+PostgreSQL · Flyway · MapStruct · RabbitMQ · AWS
 
 ---
 
 ## 📋 Professional Background
 
 20+ years delivering enterprise backend solutions:
+
 - REST API design and implementation at scale
 - Performance optimization — reduced API response times by up to 70%
 - Data warehouse and ETL design across multiple DB platforms
