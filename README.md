@@ -20,8 +20,18 @@ The system simulates a distributed order processing platform with authentication
 | Phase 2 | [order-processing-users](https://github.com/petru-acsinte-dev/order-processing-users) | Users & authentication microservice |
 | Phase 2 | [order-processing-orders](https://github.com/petru-acsinte-dev/order-processing-orders) | Products & orders microservice |
 | Phase 2 | [order-processing-shipments](https://github.com/petru-acsinte-dev/order-processing-shipments) | Fulfillment & shipment microservice |
-| Phase 3 | AWS deployment | ECS Fargate, RDS, Amazon MQ, CloudWatch — in progress |
+| Phase 3 | AWS deployment | EC2, RDS Postgres, RabbitMQ, Nginx reverse proxy — live |
 | Shared | [order-processing-common](https://github.com/petru-acsinte-dev/order-processing-common) | Shared library published to GitHub Packages |
+
+🌐 **Live demo:** http://52.205.87.85/
+
+### Try it live
+1. Open the [Users API](http://52.205.87.85/users/swagger-ui/index.html) and POST to `/login/auth`
+2. Login as `ADMIN/ADMIN` (full access) or `guest/guest` (read-only)
+3. Copy the JWT, click **Authorize** in any service, paste the token
+4. Explore the Orders and Shipments APIs
+
+*Note* > ⚠️ Running on AWS free tier — first request may be slow due to JVM warmup on constrained memory.
 
 ---
 
@@ -33,7 +43,7 @@ The system simulates a distributed order processing platform with authentication
                         └─────────────────────┬───────────────────────────────┘
                                               │ REST (JWT)
                         ┌─────────────────────▼───────────────────────────────┐
-                        │              API Gateway / ALB (AWS)                │
+                        │           Nginx Reverse Proxy (EC2, port 80)        │
                         └──────┬──────────────┬──────────────────┬────────────┘
                                │              │                  │
                ┌───────────────▼──┐  ┌────────▼───────┐  ┌──────▼──────────┐
@@ -77,7 +87,7 @@ The system simulates a distributed order processing platform with authentication
 - Database-per-service pattern (Postgres with schema isolation)
 - Shared library pattern for cross-cutting concerns (security filters, exception handling, events, messaging config)
 - Self-contained integration tests via Testcontainers (Postgres + RabbitMQ — no external dependencies)
-- AWS deployment (in progress)
+- AWS deployment (EC2 + RDS + Nginx — live at http://52.205.87.85/)
 
 ---
 
