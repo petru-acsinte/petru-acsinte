@@ -133,6 +133,10 @@ The system simulates a distributed order processing platform with authentication
 Microservices · Docker · GitHub Actions · Testcontainers · JaCoCo ·
 PostgreSQL · Flyway · MapStruct · RabbitMQ · AWS
 
+## 🛠️ Development approach
+
+AI-assisted development (Claude) for accelerated learning and implementation
+
 ---
 
 ## 📋 Professional Background
