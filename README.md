@@ -55,24 +55,58 @@ The system simulates a distributed order processing platform with authentication
                └───────┬──────────┘  └───────┬────────┘  └──────┬──────────┘
                        │                     │                   │
                ┌───────▼──────┐              │                   │
-               │   users_db   │      ┌───────▼──────┐   ┌───────▼──────┐
-               │  (Postgres)  │      │   orders_db  │   │ shipments_db │
-               └──────────────┘      │  (Postgres)  │   │  (Postgres)  │
-                                     └──────────────┘   └──────────────┘
+               │   users_db   │      ┌───────▼──────┐    ┌───────▼──────┐
+               │  (Postgres)  │      │   orders_db  │    │ shipments_db │
+               └──────────────┘      │  (Postgres)  │    │  (Postgres)  │
+                                     └──────────────┘    └──────────────┘
                                               │                   │
                                      ┌────────▼───────────────────▼────────┐
                                      │         RabbitMQ / Amazon MQ        │
-                                     │                                      │
-                                     │  Exchange: order.events (topic)      │
-                                     │                                      │
-                                     │  order.confirmed ──► shipment queue  │
-                                     │  order.shipped   ──► orders queue    │
-                                     │                                      │
-                                     │  Dead-letter queues per queue        │
-                                     └──────────────────────────────────────┘
+                                     │                                     │
+                                     │  Exchange: order.events (topic)     │
+                                     │                                     │
+                                     │  order.confirmed ──► shipment queue │
+                                     │  order.shipped   ──► orders queue   │
+                                     │                                     │
+                                     │  Dead-letter queues per queue       │
+                                     └─────────────────────────────────────┘
 ```
 
 **Flow:** Client authenticates via Users → receives JWT → calls Orders with JWT → order confirmed → `OrderConfirmedEvent` published to RabbitMQ → Shipments consumes → creates fulfillment and shipment → `OrderShippedEvent` published → Orders consumes → marks order as shipped.
+
+## ☁️ AWS Deployment (Phase 3)
+
+```
+                    ┌─────────────────────────────────┐
+                    │         External Clients        │
+                    └─────────────────┬───────────────┘
+                                      │ HTTP port 80
+                    ┌─────────────────▼───────────────┐
+                    │         Nginx Reverse Proxy     │
+                    │           (EC2 t3.micro)        │
+                    └──────┬──────────┬───────────┬───┘
+                           │          │           │
+              ┌────────────▼─┐  ┌─────▼──────┐  ┌▼────────────┐
+              │ Users Service│  │Orders Svc  │  │Shipments Svc│
+              │   :8080      │  │  :8081     │  │   :8082     │
+              └────────────┬─┘  └─────┬──────┘  └┬────────────┘
+                           │          │           │
+                   ┌──────▼──────────▼────────────▼──────┐
+                   │           RDS PostgreSQL            │
+                   │ users_db | orders_db | shipments_db │
+                   └─────────────────────────────────────┘
+                           │          │           
+                    ┌──────▼──────────▼──────────────┐
+                    │      RabbitMQ (Docker)         │
+                    │  order.events topic exchange   │
+                    └────────────────────────────────┘
+```
+
+* All services run as Docker containers on a single EC2 t3.micro instance.
+* RDS Postgres is a managed single-AZ free tier instance.
+* RabbitMQ runs as a Docker container on the same EC2 instance.
+
+*Note* This approach effectively keeps the AWS costs down to zero.
 
 ---
 
